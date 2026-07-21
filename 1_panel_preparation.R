@@ -18,11 +18,20 @@ jahr2023large <- read_excel("2_data/1_raw/Rebbaukataster/Rebbaukataster_zh_2023_
 jahr2024large <- read_excel("2_data/1_raw/Rebbaukataster/Rebbaukataster_zh_2024_mod.xlsx")
 jahr2025large <- read_excel("2_data/1_raw/Rebbaukataster/Rebbaukataster_zh_2025_mod.xlsx")
 
+#Anzahl Daten (N = 47'710)
+nrow(jahr2013large) + nrow(jahr2015large) + nrow(jahr2017large) + nrow(jahr2018large) +
+  nrow(jahr2019large) + nrow(jahr2020large) + nrow(jahr2021large) + nrow(jahr2022large) +
+  + nrow(jahr2023large) + nrow(jahr2024large) + nrow(jahr2025large)
+
 # Share of piwi plots in 2013 and 2023
 nrow(subset(jahr2013large, Weinmerkmal == "interspezifisch"))/nrow(subset(jahr2013large, !is.na(Weinmerkmal)))*100
 nrow(subset(jahr2025large, Weinmerkmal == "interspezifisch"))/nrow(subset(jahr2023large, !is.na(Weinmerkmal)))*100
 
-# 2. Processing ################################################################
+#calculate area for original data to check --> to high for all years
+sum(jahr2025large$Fläche..m2, na.rm = TRUE)/10000
+sum(jahr2013large$Fläche..m2, na.rm = TRUE)/10000
+
+# 2. Clean Up ################################################################
 # Bereinige die Spaltennamen, um Sonderzeichen und Zeilenumbrüche zu entfernen
 colnames(jahr2013large) <- make.names(colnames(jahr2013large), unique = TRUE)
 colnames(jahr2015large) <- make.names(colnames(jahr2015large), unique = TRUE)
@@ -88,12 +97,12 @@ jahr2022large <- jahr2022large %>%
     Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Entferne nur die letzte Klammer und deren Inhalt
   )
 
-#jahr2023 <- jahr2023 %>%
-#  mutate(
-#    Sortennummer = str_extract(Rebsorte, "\\(([^()]+)\\)$") %>% 
-#      str_remove_all("[()]"),  # Extrahiere die letzte Klammer und entferne Klammern
-#    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Entferne nur die letzte Klammer und deren Inhalt
-#  )
+jahr2023large <- jahr2023large %>%
+ mutate(
+   Sortennummer = str_extract(Rebsorte, "\\(([^()]+)\\)$") %>%
+     str_remove_all("[()]"),  # Extrahiere die letzte Klammer und entferne Klammern
+   Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Entferne nur die letzte Klammer und deren Inhalt
+ )
 
 jahr2024large <- jahr2024large %>%
   mutate(
@@ -109,7 +118,7 @@ jahr2025large <- jahr2025large %>%
     Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Entferne nur die letzte Klammer und deren Inhalt
   )
 
-##2.1 Datensätze auf die Interessanten Zeilen Reduzieren --> Einfacheres Handling ####
+#Datensätze auf die Interessanten Zeilen Reduzieren --> Einfacheres Handling
 jahr2013Original <- jahr2013large %>%
   dplyr::select(Betrieb,
          Parzellennr.,
@@ -332,8 +341,7 @@ jahr2024$Parzellennr. <- gsub("[^0-9]", "", jahr2024$Parzellennr.)
 jahr2025$Parzellennr. <- gsub("[^0-9]", "", jahr2025$Parzellennr.)
 
 
-#komplett leere Parzellennummern wie diese werden gelöscht
-jahr2013[3080,]
+#Komische Parzellennummern löschen
 
 jahr2013 <- jahr2013 %>%
   filter(Parzellennr. != "") %>%
@@ -570,12 +578,9 @@ jahr2024<- jahr2024 %>%
 jahr2025<- jahr2025 %>%
   mutate(Sorte_Pflanzjahr = ifelse(!is.na(Rodungsjahr_2025), paste(Sorte_Pflanzjahr, Rodungsjahr_2025, sep = "_"), Sorte_Pflanzjahr))
 
-#bevor alle datensätze zusammengefügt werden, testen wir mal
-joinOne <- full_join(jahr2013, jahr2015, by = join_by(Betrieb, Parzellennr., Sortennummer, Rebgemeinde, Pflanz...jahr,
-                                                      Sorte_Pflanzjahr))
 
 # 3. Merging the files ##################################################################
-#einige Zeilen unterscheiden sich nur in der Fläche, was im Probelauf
+#einige Zeilen unterscheiden sich nur in der Fläche, was 
 #zu many-to-many relationships geführt hat. Ich kombiniere deshalb gleiche Einträge
 jahr2013 <- jahr2013 %>%
   group_by(Betrieb, Parzellennr., Sortennummer, Rebgemeinde, Pflanz...jahr, Sorte_Pflanzjahr,
@@ -623,35 +628,10 @@ jahr2025 <- jahr2025 %>%
            Rodungsjahr_2025, Weinmerkmal_2025) %>%
   summarise(Fläche_2025 = sum(Fläche_2025), .groups = "drop")
 
-#macht man nun eine Probemerge von zwei Jahren, gibt es keine many to many relationships mehr
-joinOne <- full_join(jahr2013, jahr2015, by = join_by(Betrieb, Parzellennr., Rebgemeinde, Pflanz...jahr,
-                                                      Sorte_Pflanzjahr))
-
-# Problem: Etwas viele NAs, woran liegt das? ######################
-#viele NAs, weil die Betriebe unter anderem andere Gemeinden angegeben haben
-#Oberstammheim vs. Stammheim etc., das zu beheben wäre aber sehr aufwändig
-
-#Rebsorten dazufügen
-joinOne$Rebsorte <- sub("_.*", "", joinOne$Sorte_Pflanzjahr)
-
-length(which(is.na(joinOne$Fläche_2013))) #viele NAs bei Fläche, kann aber auch an unbestockt liegen
-length(which(joinOne$Rebsorte=='unbestockt')) #unbestockt macht 293 der 400 Einträge aus
-
-joinOne$unbestockt <- ifelse(joinOne$Rebsorte == "unbestockt", 1, 0)
-head(joinOne$unbestockt)
-
-#Mal unbestockt löschen, um andere Einträge mit NA bei Fläche besser sehen zu können
-joinOhneUnbestockt <- joinOne[joinOne$unbestockt != 1, ]
-View(joinOhneUnbestockt)
-
-#die vielen NAs (ca. 10%) kommen meiner Ansicht nach von den Daten und 
-#nicht vom falschen Mergen
-#hier einige Beispiele
-#Riesling Sylvaner 1982 gepflanzt in Regensberg auf Parzelle 779 gehört
-#einmal zu Betrieb 2101 und einmal 1840
-#Im Jahr 2013 gibt es auf der Parzelle 4557 Blauburgunder von 1985. 2015 ist es 
-#dann zwei Mal Merlot, der neu gepflanzt wurde. Die Fläche Blauburgunder wird
-#dann korrekterweise als NA angezeigt.
+#calculate area after clean up as check
+sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000 
+sum(jahr2013$Fläche_2013, na.rm = TRUE)/10000
+#sometimes too low, sometimes too high
 
 # Erstelle eine Liste der Datensätze
 datensatz_liste <- list(
@@ -679,34 +659,21 @@ merged_data_all <- Reduce(function(x, y) merge(x, y, by = c("Betrieb",
 merged_data_all <- merged_data_all %>%
   distinct()
 
-#Nun hat die Fläche und die Weinmerkmale allerdings sehr viele NAs. Fläche
+#Nun hat die Fläche und die Weinmerkmale aller jahre allerdings sehr viele NAs. 
+Fläche
 #überprüfen
+# View(merged_data_all)
 sum(merged_data_all$Fläche_2013, na.rm = TRUE)/10000
-sum(merged_data_all$Fläche_2025, na.rm = TRUE)/10000
-#zu wenig und müsste weniger werden über die Jahre
+sum(merged_data_all$Fläche_2024, na.rm = TRUE)/10000
+#in frühen Jahren zu klein und nachher zu gross
 
-#direkt über die Jahre geht es
-(sum(jahr2013$Fläche_2013[which(jahr2013$Weinmerkmal_2013 == "interspezifisch")], na.rm = TRUE) / 10000) / (sum(jahr2013$Fläche_2013, na.rm = TRUE)/10000)
-(sum(jahr2025$Fläche_2025[which(jahr2025$Weinmerkmal_2025 == "interspezifisch")], na.rm = TRUE) / 10000) / (sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000)
+#direkt über die Jahre geht es ist die Fläche gleich, also nicht falsch
+#zusammengefügt
+(sum(jahr2013$Fläche_2013, na.rm = TRUE)/10000)
+(sum(jahr2024$Fläche_2024, na.rm = TRUE)/10000)
 
 #Neue Zeile Hinzufügen die nur den Sortennamen enthählt.
 merged_data_all$Rebsorte <- sub("_.*", "", merged_data_all$Sorte_Pflanzjahr)
-
-#number of grape varieties over the years
-jahr2013mitRebsorte <- jahr2013 
-jahr2013mitRebsorte$Rebsorte <-  sub("_.*", "", jahr2013mitRebsorte$Sorte_Pflanzjahr)
-length(unique(jahr2013mitRebsorte$Rebsorte))
-
-jahr2025mitRebsorte <- jahr2025 
-jahr2025mitRebsorte$Rebsorte <-  sub("_.*", "", jahr2025mitRebsorte$Sorte_Pflanzjahr)
-length(unique(jahr2025mitRebsorte$Rebsorte))
-
-#area of grapes compared to canton zurich
-sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000
-(zürich$KANTONSFLA) #fläche von Zürich in Hektaren
-#41 % des Kantons sind laut Agrarbericht 2023 landwirtschaftliche Nutzfläche
-(sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000) / (zürich$KANTONSFLA * 0.41)
-(zürich$KANTONSFLA * 0.41)
 
 # 4. Reshape von wide to long ##############################################
 library(tidyr)
@@ -731,81 +698,125 @@ data_long$group_id <- paste(data_long$Betrieb, data_long$Parzellennr., data_long
 data_long <- data_long %>%
   group_by(group_id) %>%
   mutate(drop_flag = max(Fläche_test))
+#Weinmerkmal ergänzen 
+interspezifisch <- c("Übrige Sorten rot \"Piwi\", nicht AOC", "Übrige Sorten weiss \"Piwi\", nicht AOC",
+                     "Souvignier gris", "Johanniter", "Muscaris", "Regent", "Buffalo",
+                     "Muscat bleu", "Cabernet Jura", "Baco noir", "Bianca", "Birstaler Muskat",
+                     "Cabernet blanc", "De Chaunac", "DeChaunac", "Nero", "CAL 1-36",
+                     "Garanoir", "Divico", "Léon Millot", "Maréchal Foch", "Solaris",
+                     "Calardis blanc", "Calardis musqué", "Lac 1/02-11-12", "Lac 1/02-11-17",
+                     "Lac 1/02 -05-35", "Sauvitage (WE 88-101-13)", "Seyval blanc",
+                     "VB 05-A-100", "WE 86-708-86", "VB CAL 1-28", "Cabernet Carbon",
+                     "Cabernet Cortis", "Divico (IRAC 2091)", "Sauvignac (VB CAL 6-04)",
+                     "Carminoir", "Divona (IRAC 2060)", "Vidal blanc", "Satin noir (VB 91-26-29)",
+                     "Muscatin", "Prior", "Monarch", "Diolinoir", "Siramé", "Chancellor",
+                     "Pinot Nova", "Merlotin", "VB CAL 1-22", "Pinotin", "Cabertin",
+                     "Piroso", "Cabernet Soyhières", "Sauvignon Soyhières", "VB 32-7 (Sauvignon Soyhières)",
+                     "Donauriesling", "Kalina", "Helios",  "Cabernet noir (VB 91-26-04)",
+                     "Cabernet noir", "Allegro", "Baron", "Laurot", "Roter Müller-Thurgau",
+                     "Cabernet Cantor", "VB 91-26-26", "Direktträger", "CAL 1-22", 
+                     "Sauvignon Soyhières (VB 32-7)", "Übrige Sorten rot (Piwi)", 
+                     "Millot-Foch", "Voltis", "Bronner", "CAL 1-28", "Mara", "Cabernet VB",
+                     "CAL 6-04", "VB CAL 6-04", "VB Cabernet", "Caberneuf ()", 
+                     "Caberneuf", "Coliris", "Floreal", "Gamarello (MRAC 1099)",
+                     "Merello (MRAC 1087)", "Cabernello (MRAC 40)", "Nerolo (MRAC 1817)",
+                     "Cornarello (MRAC 1626)", "Galotta", "Pinot Iskra", "Chambourcin",
+                     "RAC 3209", "CabVB rot", "CabVB weiss",  "Aurora", "Excelsior",
+                     "Magliasino", "Ontario")
+data_long$Weinmerkmal <- ifelse(data_long$Rebsorte %in% interspezifisch, 1, 0)
+#fläche NA mit 0 ersetzen
+data_long$Fläche[is.na(data_long$Fläche)] <- 0
 
 data_long_unique <- data_long %>%
   distinct()
+
+#delete entries with planting dates in the future
+data_long <- data_long[data_long$plantation_year < 2026,]
 
 #dieser Code habe ich von Lucca übernommen, er reduziert die Fläche aber von
 #602 ha auf 380, weshalb ich das dann nicht mehr ausgeführt habe
 #data_long <- data_long %>%
 # filter(!is.na(drop_flag))
 
-# 5. Further clean up ##############################################################
-sum(data_long$Fläche[data_long$year == 2025], na.rm = TRUE)/10000 
 
+#ab hier werden die Daten nur ausgewertet, nicht mehr verändert
+#5. Number of grape varieties over the years ###################################
+# jahr2013mitRebsorte <- jahr2013
+# jahr2013mitRebsorte$Rebsorte <-  sub("_.*", "", jahr2013mitRebsorte$Sorte_Pflanzjahr)
+# length(unique(jahr2013mitRebsorte$Rebsorte))
+#
+# jahr2025mitRebsorte <- jahr2025
+# jahr2025mitRebsorte$Rebsorte <-  sub("_.*", "", jahr2025mitRebsorte$Sorte_Pflanzjahr)
+# length(unique(jahr2025mitRebsorte$Rebsorte))
 
-#delete entries with planting dates in the future
-data_long <- data_long[data_long$plantation_year < 2026,]
-merged_data_all <- merged_data_all[merged_data_all$Pflanz...jahr < 2026,]
+#area of grapes compared to canton zurich
+# sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000 #fläche aller Trauben
+# (zürich$KANTONSFLA) #fläche von Zürich in Hektaren
+# #41 % des Kantons sind laut Agrarbericht 2023 landwirtschaftliche Nutzfläche
+# (zürich$KANTONSFLA * 0.41)
+# #fläche von grapes im Verhältnis zur LN
+# (sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000) / (zürich$KANTONSFLA * 0.41)
 
 # 6. Fläche Piwi vs. Gesamtfläche ##############################################
 #wieso hat es nun weniger piwis als früher?
+sum(shapefile$FLAECHE[which(shapefile$reben == 1)], na.rm = TRUE)
 
-x <- sum(merged_data_all$Fläche_2025, na.rm = TRUE)/10000 
-y <- sum(merged_data_all$Fläche_2025[which(merged_data_all$Weinmerkmal_2025 == "interspezifisch")], na.rm = TRUE)/10000 
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2013)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2013)], na.rm = TRUE)/10000 #konventionell
 x/y
-y
+y #area too low
 
-x <- sum(merged_data_all$Fläche_2013, na.rm = TRUE)/10000 
-y <- sum(merged_data_all$Fläche_2013[which(merged_data_all$Weinmerkmal_2013 == "interspezifisch")], na.rm = TRUE)/10000 
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2025)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2025)], na.rm = TRUE)/10000 #konventionell
 x/y
+y #area too low
 
-fläche2013gesamt <- sum(data_long$Fläche[which(data_long$year == 2013)], na.rm = TRUE)/10000
-fläche2013piwi <-sum(data_long$Fläche[which((data_long$Weinmerkmal=='interspezifisch') & 
-                                              (data_long$year == 2013))])/10000
-fläche2013gesamt / fläche2013piwi
-
-fläche2023gesamt <- sum(data_long$Fläche[which(data_long$year == 2023)], na.rm = TRUE)/10000
-fläche2023piwi <- sum(data_long$Fläche[which((data_long$Weinmerkmal=='interspezifisch') &
-                                               (data_long$year == 2023))])/10000
-fläche2023gesamt / fläche2023piwi
-
-#Ich denke, dass bei Piwis mehr Fehler in den Angaben der landwirte sind
-nrow(jahr2013Original) - nrow(jahr2013) #total gelöschte Einträge
-#davon piwis
-anzahlpiwi2013Original <- which(jahr2013Original$Weinmerkmal_2013 == "interspezifisch")
-anzahlpiwi2013Original <- length(anzahlpiwi2013Original)
-anzahlpiwi2013Neu <- which(jahr2013$Weinmerkmal_2013 == "interspezifisch")
-anzahlpiwi2013Neu <- length(anzahlpiwi2013Neu)
-(anzahlpiwi2013Original - anzahlpiwi2013Neu) / ((nrow(jahr2013Original) - nrow(jahr2013)))
-#fast 10 % aller gelöschten Einträge aufgrund fehlerhaften Eingaben der Landwirte
-#sind Piwis im jahr 2013
-
-nrow(jahr2023Original) - nrow(jahr2023) #total gelöschte Einträge
-#davon piwis
-anzahlpiwi2023Original <- which(jahr2023Original$Weinmerkmal_2023 == "interspezifisch")
-anzahlpiwi2023Original <- length(anzahlpiwi2023Original)
-anzahlpiwi2023Neu <- which(jahr2023$Weinmerkmal_2023 == "interspezifisch")
-anzahlpiwi2023Neu <- length(anzahlpiwi2023Neu)
-(anzahlpiwi2023Original - anzahlpiwi2023Neu) / ((nrow(jahr2023Original) - nrow(jahr2023)))
-#hier sind es sogar 20 %, weshalb die Anzahl an Piwis zu sinken scheint.
 
 # 7. Anwendungsbeispiele #######################################################
 ## 7.1 Area plot ----------------------------------------------------------------------------
+#seems to low
 yearly_acerage <- data_long %>%
   group_by(year) %>%
-  summarise(yearly_acerage = sum(Fläche_test))
+  summarise(yearly_acerage = sum(na.omit(Fläche)))
+
+#I take the data from each year directly
+anbaufläche2013 <- sum(jahr2013$Fläche_2013, na.rm = TRUE)/10000
+anbaufläche2015 <- sum(jahr2015$Fläche_2015, na.rm = TRUE)/10000
+anbaufläche2017 <- sum(jahr2017$Fläche_2017, na.rm = TRUE)/10000
+anbaufläche2018 <- sum(jahr2018$Fläche_2018, na.rm = TRUE)/10000
+anbaufläche2019 <- sum(jahr2019$Fläche_2019, na.rm = TRUE)/10000
+anbaufläche2020 <- sum(jahr2020$Fläche_2020, na.rm = TRUE)/10000
+anbaufläche2021 <- sum(jahr2021$Fläche_2021, na.rm = TRUE)/10000
+anbaufläche2022 <- sum(jahr2022$Fläche_2022, na.rm = TRUE)/10000
+anbaufläche2023 <- sum(jahr2023$Fläche_2023, na.rm = TRUE)/10000
+anbaufläche2024 <- sum(jahr2024$Fläche_2024, na.rm = TRUE)/10000
+anbaufläche2025 <- sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000
+anbaufläche <- c(anbaufläche2013, anbaufläche2015, anbaufläche2017, anbaufläche2018,
+                 anbaufläche2019, anbaufläche2020, anbaufläche2021, anbaufläche2022, 
+                 anbaufläche2023, anbaufläche2024, anbaufläche2025)
+
+years <- c(2013, 2015, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025)
+yearly_acerage <- data.frame(years, anbaufläche)
 
 ggplot() +
-  geom_line(data = yearly_acerage, aes(x = year, y = yearly_acerage)) +
+  geom_line(data = yearly_acerage, aes(x = years, y = (anbaufläche))) +
   #ylim(0,50000000) +
+  labs(y = "Area of grapes in ha", x = "Year") +
   theme_minimal()
 
-# Erste Zeilen des neuen DataFrames anzeigen
-head(merged_data_all)
+#anzahl betriebe
+length(unique(merged_data_all$Betrieb))
+#anzahl plots
+length(unique(merged_data_all$Parzellennr.))
+length(unique(data_long$Parzellennr.))
+summary(data_long$Fläche)
+View(data_long)
+#delete fläche 0 to get a more meaningful mean
+data_long <- data_long[data_long$Fläche > 0,]
 
 
-## 7.2 Export --------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 7.2 Export ----Fläche## 7.2 Export --------------------------------------------------------------------------------------------------------------------------------------------------
 #export
 
 library(openxlsx)
