@@ -1,14 +1,16 @@
-# Load the library
+#1. Admin ######################################################################
 library(sf)
 library(ggplot2)
 library(patchwork)
 library(dplyr)
 
+#2. Load data ##################################################################
 setwd("~/3_Data/27_cadaster_canton_zurich")
 
 # Read the shapefile
 shapefile <- st_read("2_data/Landwirtschaftliche_Kulturflächen_(aktuell)/Landwirtschaftli...achen_-aktuell/LW_NUTZUNGSFLAECHEN_AKTUELL_F.shp")
 
+#3. Plot #######################################################################
 df <- st_drop_geometry(shapefile)
 
 df$reben <- as.numeric(ifelse(df$BLW_NAME %in% c(
@@ -37,7 +39,7 @@ p <- ggplot() +
   ) +
   theme_minimal() 
 
-#p
+p
 
 ggsave("3_output/cantonal_plot.png", plot = p, width = 20, height = 20, dpi = 300, units = "cm", bg = "white")
 
