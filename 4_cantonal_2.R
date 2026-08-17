@@ -1,3 +1,4 @@
+#1. Admin ######################################################################
 # Load the library
 library(sf)
 library(ggplot2)
@@ -10,9 +11,8 @@ merged_data_all$Weinmerkmal <- ifelse(
   ifelse(merged_data_all$Weinmerkmal == "europäisch", 0, NA)
 )
 
-#test
-#merged_data_all$Weinmerkmal <- 1
 
+#2. plot #######################################################################
 ##what is conventional grape and what is piwi
 p <- ggplot() +
   geom_sf(data = merged_data_all$geometry, aes(fill = as.factor(merged_data_all$Weinmerkmal)), color = NA) +
@@ -32,7 +32,7 @@ p <- ggplot() +
 ggsave("3_output/piwivsconventional.png", plot = p, width = 20, height = 20, dpi = 300, units = "cm", bg = "white")
 
 
-#nun mit piwi, conventionell und anderen nutzungsflächen
+#Now with piwi vs. conventional and other agricultural use
 shapefile <- st_read("2_data/Landwirtschaftliche_Kulturflächen_(aktuell)/Landwirtschaftli...achen_-aktuell/LW_NUTZUNGSFLAECHEN_AKTUELL_F.shp")
 
 df <- st_drop_geometry(shapefile)
@@ -55,7 +55,7 @@ data_long <- data_long %>%
 shapefile <- shapefile %>%
   mutate(Parzellennr. = as.numeric(Parzellennr.))
 
-#hier anders herum mergen
+#merge the other way around here
 merged_data_all <- shapefile %>%
   full_join(data_long, by = c("Parzellennr.", "Rebgemeinde"))
 
@@ -64,8 +64,6 @@ merged_data_all$Weinmerkmal <- with(merged_data_all, ifelse(
   ifelse(Weinmerkmal == "interspezifisch", 2,
          ifelse(Weinmerkmal == "europäisch", 1, NA)))
 )
-
-#merged_data_all <- merged_data_all[merged_data_all$reben != 0,]
 
 p <- ggplot() +
   geom_sf(data = merged_data_all$geometry, aes(fill = as.factor(merged_data_all$Weinmerkmal)), color = NA) +
