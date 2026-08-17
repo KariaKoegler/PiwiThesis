@@ -18,10 +18,17 @@ jahr2023large <- read_excel("2_data/1_raw/Rebbaukataster/Rebbaukataster_zh_2023_
 jahr2024large <- read_excel("2_data/1_raw/Rebbaukataster/Rebbaukataster_zh_2024_mod.xlsx")
 jahr2025large <- read_excel("2_data/1_raw/Rebbaukataster/Rebbaukataster_zh_2025_mod.xlsx")
 
-#Anzahl Daten (N = 47'710)
+#Number of observations (N = 47'710)
 nrow(jahr2013large) + nrow(jahr2015large) + nrow(jahr2017large) + nrow(jahr2018large) +
   nrow(jahr2019large) + nrow(jahr2020large) + nrow(jahr2021large) + nrow(jahr2022large) +
   + nrow(jahr2023large) + nrow(jahr2024large) + nrow(jahr2025large)
+
+#Number of vineyards 
+length(unique(jahr2013large$Parzellennr.))
+
+#Number of farms across the years
+length(unique(jahr2013large$Betrieb))
+length(unique(jahr2025large$Betrieb))
 
 # Share of piwi plots in 2013 and 2023
 nrow(subset(jahr2013large, Weinmerkmal == "interspezifisch"))/nrow(subset(jahr2013large, !is.na(Weinmerkmal)))*100
@@ -32,7 +39,7 @@ sum(jahr2025large$Fläche..m2, na.rm = TRUE)/10000
 sum(jahr2013large$Fläche..m2, na.rm = TRUE)/10000
 
 # 2. Clean Up ################################################################
-# Bereinige die Spaltennamen, um Sonderzeichen und Zeilenumbrüche zu entfernen
+# Clean up the column names to remove special characters and line breaks
 colnames(jahr2013large) <- make.names(colnames(jahr2013large), unique = TRUE)
 colnames(jahr2015large) <- make.names(colnames(jahr2015large), unique = TRUE)
 colnames(jahr2017large) <- make.names(colnames(jahr2017large), unique = TRUE)
@@ -45,7 +52,7 @@ colnames(jahr2023large) <- make.names(colnames(jahr2023large), unique = TRUE)
 colnames(jahr2024large) <- make.names(colnames(jahr2024large), unique = TRUE)
 colnames(jahr2025large) <- make.names(colnames(jahr2024large), unique = TRUE)
 
-# Bereinigen von Leerschlägen 
+# Removing spaces
 jahr2013large$Betrieb<- gsub(" ","",jahr2013large$Betrieb)
 jahr2015large$Betrieb<- gsub(" ","",jahr2015large$Betrieb)
 jahr2017large$Betrieb<- gsub(" ","",jahr2017large$Betrieb)
@@ -58,7 +65,7 @@ jahr2023large$Betrieb<- gsub(" ","",jahr2023large$Betrieb)
 jahr2024large$Betrieb<- gsub(" ","",jahr2024large$Betrieb)
 jahr2025large$Betrieb<- gsub(" ","",jahr2025large$Betrieb)
 
-# Vereinheitlichen der Spaltennamen Fläche
+# Standardize the column names
 colnames(jahr2019large)[colnames(jahr2019large) == "Fläche...m2"] <- "Fläche..m2"
 colnames(jahr2020large)[colnames(jahr2020large) == "Fläche...m2"] <- "Fläche..m2"
 colnames(jahr2021large)[colnames(jahr2021large) == "Fläche...m2"] <- "Fläche..m2"
@@ -67,58 +74,57 @@ colnames(jahr2023large)[colnames(jahr2023large) == "Fläche...m2"] <- "Fläche..
 colnames(jahr2024large)[colnames(jahr2024large) == "Fläche...m2"] <- "Fläche..m2"
 colnames(jahr2025large)[colnames(jahr2025large) == "Fläche...m2"] <- "Fläche..m2"
 
-#Für das Jahr 2019:
+#Further Clean up
 jahr2019large <- jahr2019large %>%
   mutate(
     Sortennummer = str_extract(Rebsorte, "\\(([^()]+)\\)$") %>% 
-      str_remove_all("[()]"),  # Extrahiere die letzte Klammer und entferne Klammern
-    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Entferne nur die letzte Klammer und deren Inhalt
+      str_remove_all("[()]"),  # Extract the last parenthese and remove the others
+    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Remove the last parenthese and its content
   )
 
-#Für alle anderen Jahre: 
 jahr2020large <- jahr2020large %>%
   mutate(
     Sortennummer = str_extract(Rebsorte, "\\(([^()]+)\\)$") %>% 
-      str_remove_all("[()]"),  # Extrahiere die letzte Klammer und entferne Klammern
-    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Entferne nur die letzte Klammer und deren Inhalt
+      str_remove_all("[()]"),  
+    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  
   )
 
 jahr2021large <- jahr2021large %>%
   mutate(
     Sortennummer = str_extract(Rebsorte, "\\(([^()]+)\\)$") %>% 
-      str_remove_all("[()]"),  # Extrahiere die letzte Klammer und entferne Klammern
-    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Entferne nur die letzte Klammer und deren Inhalt
+      str_remove_all("[()]"),  
+    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  
   )
 
 jahr2022large <- jahr2022large %>%
   mutate(
     Sortennummer = str_extract(Rebsorte, "\\(([^()]+)\\)$") %>% 
-      str_remove_all("[()]"),  # Extrahiere die letzte Klammer und entferne Klammern
-    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Entferne nur die letzte Klammer und deren Inhalt
+      str_remove_all("[()]"),  
+    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  
   )
 
 jahr2023large <- jahr2023large %>%
  mutate(
    Sortennummer = str_extract(Rebsorte, "\\(([^()]+)\\)$") %>%
-     str_remove_all("[()]"),  # Extrahiere die letzte Klammer und entferne Klammern
-   Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Entferne nur die letzte Klammer und deren Inhalt
+     str_remove_all("[()]"),  
+   Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  
  )
 
 jahr2024large <- jahr2024large %>%
   mutate(
     Sortennummer = str_extract(Rebsorte, "\\(([^()]+)\\)$") %>% 
-      str_remove_all("[()]"),  # Extrahiere die letzte Klammer und entferne Klammern
-    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Entferne nur die letzte Klammer und deren Inhalt
+      str_remove_all("[()]"),  
+    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$") 
   )
 
 jahr2025large <- jahr2025large %>%
   mutate(
     Sortennummer = str_extract(Rebsorte, "\\(([^()]+)\\)$") %>% 
-      str_remove_all("[()]"),  # Extrahiere die letzte Klammer und entferne Klammern
-    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  # Entferne nur die letzte Klammer und deren Inhalt
+      str_remove_all("[()]"),  
+    Rebsorte = str_remove(Rebsorte, "\\s*\\([^()]+\\)$")  
   )
 
-#Datensätze auf die Interessanten Zeilen Reduzieren --> Einfacheres Handling
+#Only keep intersting columns for easier handling
 jahr2013Original <- jahr2013large %>%
   dplyr::select(Betrieb,
          Parzellennr.,
@@ -203,7 +209,7 @@ jahr2020Original <- jahr2020large %>%
   rename(Rodungsjahr_2020 = Rod...jahr,
          Weinmerkmal_2020 = Weinmerkmal)
 
-jahr2021Original <- jahr2021large %>% #Bei der Fläche gabe es 3 Leerschläge in diesem Datensatz. 
+jahr2021Original <- jahr2021large %>% 
   dplyr::select(Betrieb,
          Parzellennr.,
          #Kategorie...A..bestock..B..unbestockt..C..kein.Wein,
@@ -217,7 +223,7 @@ jahr2021Original <- jahr2021large %>% #Bei der Fläche gabe es 3 Leerschläge in
   rename(Rodungsjahr_2021 = Rod...jahr,
          Weinmerkmal_2021 = Weinmerkmal)
 
-jahr2022Original <- jahr2022large %>% #Bei der Fläche gabe es 3 Leerschläge in diesem Datensatz. 
+jahr2022Original <- jahr2022large %>% 
   dplyr::select(Betrieb,
          Parzellennr.,
          #Kategorie...A..bestock..B..unbestockt..C..kein.Wein,
@@ -231,7 +237,7 @@ jahr2022Original <- jahr2022large %>% #Bei der Fläche gabe es 3 Leerschläge in
   rename(Rodungsjahr_2022 = Rod...jahr,
          Weinmerkmal_2022 = Weinmerkmal)
 
-jahr2023Original <- jahr2023large %>% #Bei der Fläche gabe es 3 Leerschläge in diesem Datensatz. 
+jahr2023Original <- jahr2023large %>% 
   dplyr::select(Betrieb,
          Parzellennr.,
          #Kategorie...A..bestock..B..unbestockt..C..kein.Wein,
@@ -245,7 +251,7 @@ jahr2023Original <- jahr2023large %>% #Bei der Fläche gabe es 3 Leerschläge in
   rename(Rodungsjahr_2023 = Rod...jahr,
          Weinmerkmal_2023 = Weinmerkmal)
 
-jahr2024Original <- jahr2024large %>% #Bei der Fläche gabe es 3 Leerschläge in diesem Datensatz. 
+jahr2024Original <- jahr2024large %>% 
   dplyr::select(Betrieb,
                 Parzellennr.,
                 #Kategorie...A..bestock..B..unbestockt..C..kein.Wein,
@@ -259,7 +265,7 @@ jahr2024Original <- jahr2024large %>% #Bei der Fläche gabe es 3 Leerschläge in
   rename(Rodungsjahr_2024 = Rod...jahr,
          Weinmerkmal_2024 = Weinmerkmal)
 
-jahr2025Original <- jahr2025large %>% #Bei der Fläche gabe es 3 Leerschläge in diesem Datensatz. 
+jahr2025Original <- jahr2025large %>%  
   dplyr::select(Betrieb,
                 Parzellennr.,
                 #Kategorie...A..bestock..B..unbestockt..C..kein.Wein,
@@ -273,7 +279,7 @@ jahr2025Original <- jahr2025large %>% #Bei der Fläche gabe es 3 Leerschläge in
   rename(Rodungsjahr_2025 = Rod...jahr,
          Weinmerkmal_2025 = Weinmerkmal)
 
-#Kopie, um nachher bearbeiten und vergleichen zu können
+#Copy to compare data before and after processing
 jahr2013 <- jahr2013Original
 jahr2015 <- jahr2015Original
 jahr2017 <- jahr2017Original
@@ -286,13 +292,10 @@ jahr2023 <- jahr2023Original
 jahr2024 <- jahr2024Original
 jahr2025 <- jahr2025Original
 
-#Ab dem Jahr 2019 wurden Sortennummer und Rebsorte nicht mehr in Seperaten Zeilen erfasst.
-#Ich bereinige den Code in einem ersten Schritt mal so, dass Sortennummer und Rebsorte wieder in Seperaten Zeilen sind. 
-#Nächstes Problem: ab dem Jahr 2019 gibt es neue Sortennummern. Das aber später. 
+#Starting in 2019, the variety number and grape variety were no longer recorded on separate lines.
+#As a first step, I'll clean up the code so that the variety number and grape variety are back on separate lines.
 
-#Ab dem Jahr 2019 wurden auch einige Sorten etwas anders benannt. 
-#Ich habe mich dazu entschieden die Namen von 2013 zu behalten. 
-#Das bedeutet:
+#Ensure consistent variety names 
 #Sauvignon Soyhières (VB 32-7) --> Sauvignon Soyhières
 #Savagnin blanc --> 	Heida
 #Cabaret noir (VB 91-26-04) --> Cabernet noir
@@ -324,10 +327,8 @@ jahr2024$Rebsorte <- gsub("Savagnin blanc", "Heida", jahr2024$Rebsorte)
 jahr2025$Rebsorte <- gsub("Sauvignon Soyhières \\(VB 32-7\\)", "Sauvignon Soyhières", jahr2025$Rebsorte)
 jahr2025$Rebsorte <- gsub("Cabaret noir \\(VB 91-26-04\\)", "Cabernet noir", jahr2025$Rebsorte)
 jahr2025$Rebsorte <- gsub("Savagnin blanc", "Heida", jahr2025$Rebsorte)
-#Parzellennummern sind manchmal auch mit Buchstaben und nicht nur Zahlen. Ich entferne in diesem 
-#Schritt die Buchstaben. 
 
-# Buchstaben aus der Spalte entfernen
+#Remove letters out of estate number
 jahr2013$Parzellennr. <- gsub("[^0-9]", "", jahr2013$Parzellennr.)
 jahr2015$Parzellennr. <- gsub("[^0-9]", "", jahr2015$Parzellennr.)
 jahr2017$Parzellennr. <- gsub("[^0-9]", "", jahr2017$Parzellennr.)
@@ -340,14 +341,12 @@ jahr2023$Parzellennr. <- gsub("[^0-9]", "", jahr2023$Parzellennr.)
 jahr2024$Parzellennr. <- gsub("[^0-9]", "", jahr2024$Parzellennr.)
 jahr2025$Parzellennr. <- gsub("[^0-9]", "", jahr2025$Parzellennr.)
 
-
-#Komische Parzellennummern löschen
-
+#Fix unusual estate numbers
 jahr2013 <- jahr2013 %>%
   filter(Parzellennr. != "") %>%
-  separate_rows(Parzellennr., sep = "\\+") %>% ##Parzellennummern wie 1234+5678 werden aufgeteilt
-  separate_rows(Parzellennr., sep = "\\,") %>% #Parzellennummern wie 1234,5678 werden aufgeteilt
-  separate_rows(Parzellennr., sep = "\\/") #Parzellennummern wie 1234/5678 werden aufgeteilt
+  separate_rows(Parzellennr., sep = "\\+") %>% #numbers like 1234+5678 are split in two rows
+  separate_rows(Parzellennr., sep = "\\,") %>% #numbers like 1234,5678 are split in two rows
+  separate_rows(Parzellennr., sep = "\\/") #numbers like 1234/5678 are split in two rows
 
 jahr2015 <- jahr2015 %>%
   filter(Parzellennr. != "") %>%
@@ -409,42 +408,7 @@ jahr2025 <- jahr2025 %>%
   separate_rows(Parzellennr., sep = "\\,") %>% 
   separate_rows(Parzellennr., sep = "\\/") 
 
-#parzellennummern sollen nicht grösser als 99999 sein
-jahr2013$Parzellennr. <- as.numeric(jahr2013$Parzellennr.)
-jahr2013 <- jahr2013 %>%
-  filter(Parzellennr. < 99999)
-jahr2015$Parzellennr. <- as.numeric(jahr2015$Parzellennr.)
-jahr2015 <- jahr2015 %>%
-  filter(Parzellennr. < 99999)
-jahr2017$Parzellennr. <- as.numeric(jahr2017$Parzellennr.)
-jahr2017 <- jahr2017 %>%
-  filter(Parzellennr. < 99999)
-jahr2018$Parzellennr. <- as.numeric(jahr2018$Parzellennr.)
-jahr2018 <- jahr2018 %>%
-  filter(Parzellennr. < 99999)
-jahr2019$Parzellennr. <- as.numeric(jahr2019$Parzellennr.)
-jahr2019 <- jahr2019 %>%
-  filter(Parzellennr. < 99099)
-jahr2020$Parzellennr. <- as.numeric(jahr2020$Parzellennr.)
-jahr2020 <- jahr2020 %>%
-  filter(Parzellennr. < 99999)
-jahr2021$Parzellennr. <- as.numeric(jahr2021$Parzellennr.)
-jahr2021 <- jahr2021 %>%
-  filter(Parzellennr. < 99999)
-jahr2022$Parzellennr. <- as.numeric(jahr2022$Parzellennr.)
-jahr2022 <- jahr2022 %>%
-  filter(Parzellennr. < 99999)
-jahr2023$Parzellennr. <- as.numeric(jahr2023$Parzellennr.)
-jahr2023 <- jahr2023 %>%
-  filter(Parzellennr. < 9999)
-jahr2024$Parzellennr. <- as.numeric(jahr2024$Parzellennr.)
-jahr2024 <- jahr2024 %>%
-  filter(Parzellennr. < 99999)
-jahr2025$Parzellennr. <- as.numeric(jahr2025$Parzellennr.)
-jahr2025 <- jahr2025 %>%
-  filter(Parzellennr. < 99999)
-
-#parzellennummer 0 wird gelöscht
+#delete estate number 0
 jahr2013 <- jahr2013[jahr2013$Parzellennr. != 0,]
 jahr2015 <- jahr2015[jahr2015$Parzellennr. != 0,]
 jahr2017 <- jahr2017[jahr2017$Parzellennr. != 0,]
@@ -457,57 +421,54 @@ jahr2023 <- jahr2023[jahr2023$Parzellennr. != 0,]
 jahr2024 <- jahr2024[jahr2024$Parzellennr. != 0,]
 jahr2025 <- jahr2025[jahr2025$Parzellennr. != 0,]
 
-#unbestockt soll einfach unbestock sein als Eintrag und nicht unbestockt_NA oder unbestockt_0
 
-# Erstelle die Tabelle für 2013 und füge die gewünschten Spalten hinzu
+# Renaming, Variety and planting date gets combined
 jahr2013 <- jahr2013 %>%
-  rename(Fläche_2013 = Fläche..m2, Rebsorte_2013 = Rebsorte) %>%  # Umbenennen der Fläche-Spalte und Rebsorte
-  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2013, Pflanz...jahr, sep = "_")) # Kombinieren von Rebsorte und Pflanzjahr
+  rename(Fläche_2013 = Fläche..m2, Rebsorte_2013 = Rebsorte) %>%  
+  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2013, Pflanz...jahr, sep = "_")) 
 
-# Erstelle die Tabelle für 2015 und füge die gewünschten Spalten hinzu
 jahr2015 <- jahr2015 %>%
-  rename(Fläche_2015 = Fläche..m2, Rebsorte_2015 = Rebsorte) %>% # Umbenennen der Fläche-Spalte und Rebsorte
-  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2015, Pflanz...jahr, sep = "_")) # Kombinieren von Rebsorte und Pflanzjahr
+  rename(Fläche_2015 = Fläche..m2, Rebsorte_2015 = Rebsorte) %>% 
+  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2015, Pflanz...jahr, sep = "_")) 
 
-#Für die restlichen Tabellen das gleiche: 
 jahr2017 <- jahr2017 %>%
-  rename(Fläche_2017 = Fläche..m2, Rebsorte_2017 = Rebsorte) %>% # Umbenennen der Fläche-Spalte und Rebsorte
-  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2017, Pflanz...jahr, sep = "_")) # Kombinieren von Rebsorte und Pflanzjahr
+  rename(Fläche_2017 = Fläche..m2, Rebsorte_2017 = Rebsorte) %>% 
+  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2017, Pflanz...jahr, sep = "_")) 
 
 jahr2018 <- jahr2018 %>%
-  rename(Fläche_2018 = Fläche..m2, Rebsorte_2018 = Rebsorte) %>% # Umbenennen der Fläche-Spalte und Rebsorte
-  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2018, Pflanz...jahr, sep = "_")) # Kombinieren von Rebsorte und Pflanzjahr
+  rename(Fläche_2018 = Fläche..m2, Rebsorte_2018 = Rebsorte) %>% 
+  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2018, Pflanz...jahr, sep = "_")) 
   
 jahr2019 <- jahr2019 %>%
-  rename(Fläche_2019 = Fläche..m2, Rebsorte_2019 = Rebsorte) %>% # Umbenennen der Fläche-Spalte und Rebsorte
-  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2019, Pflanz...jahr, sep = "_")) # Kombinieren von Rebsorte und Pflanzjahr
+  rename(Fläche_2019 = Fläche..m2, Rebsorte_2019 = Rebsorte) %>% 
+  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2019, Pflanz...jahr, sep = "_")) 
 
 jahr2020 <- jahr2020 %>%
-  rename(Fläche_2020 = Fläche..m2, Rebsorte_2020 = Rebsorte) %>% # Umbenennen der Fläche-Spalte und Rebsorte
-  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2020, Pflanz...jahr, sep = "_")) # Kombinieren von Rebsorte und Pflanzjahr
+  rename(Fläche_2020 = Fläche..m2, Rebsorte_2020 = Rebsorte) %>% 
+  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2020, Pflanz...jahr, sep = "_")) 
 
 jahr2021 <- jahr2021 %>%
-  rename(Fläche_2021 = Fläche..m2, Rebsorte_2021 = Rebsorte) %>% # Umbenennen der Fläche-Spalte und Rebsorte
-  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2021, Pflanz...jahr, sep = "_")) # Kombinieren von Rebsorte und Pflanzjahr
+  rename(Fläche_2021 = Fläche..m2, Rebsorte_2021 = Rebsorte) %>% 
+  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2021, Pflanz...jahr, sep = "_")) 
 
 jahr2022 <- jahr2022 %>%
-  rename(Fläche_2022 = Fläche..m2, Rebsorte_2022 = Rebsorte) %>% # Umbenennen der Fläche-Spalte und Rebsorte
-  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2022, Pflanz...jahr, sep = "_")) # Kombinieren von Rebsorte und Pflanzjahr
+  rename(Fläche_2022 = Fläche..m2, Rebsorte_2022 = Rebsorte) %>%
+  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2022, Pflanz...jahr, sep = "_")) 
 
 jahr2023 <- jahr2023 %>%
-  rename(Fläche_2023 = Fläche..m2, Rebsorte_2023 = Rebsorte) %>% # Umbenennen der Fläche-Spalte und Rebsorte
-  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2023, Pflanz...jahr, sep = "_")) # Kombinieren von Rebsorte und Pflanzjahr
+  rename(Fläche_2023 = Fläche..m2, Rebsorte_2023 = Rebsorte) %>%
+  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2023, Pflanz...jahr, sep = "_"))
 
 jahr2024 <- jahr2024 %>%
-  rename(Fläche_2024 = Fläche..m2, Rebsorte_2024 = Rebsorte) %>% # Umbenennen der Fläche-Spalte und Rebsorte
-  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2024, Pflanz...jahr, sep = "_")) # Kombinieren von Rebsorte und Pflanzjahr
+  rename(Fläche_2024 = Fläche..m2, Rebsorte_2024 = Rebsorte) %>% 
+  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2024, Pflanz...jahr, sep = "_"))
 
 jahr2025 <- jahr2025 %>%
-  rename(Fläche_2025 = Fläche..m2, Rebsorte_2025 = Rebsorte) %>% # Umbenennen der Fläche-Spalte und Rebsorte
-  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2025, Pflanz...jahr, sep = "_")) # Kombinieren von Rebsorte und Pflanzjahr
+  rename(Fläche_2025 = Fläche..m2, Rebsorte_2025 = Rebsorte) %>% 
+  mutate(Sorte_Pflanzjahr = paste(Rebsorte_2025, Pflanz...jahr, sep = "_")) 
 
 
-#unbestockt soll einfach unbestock sein als Eintrag und nicht unbestockt_NA oder unbestockt_0
+#unbestockt instead of unbestockt_NA or unbestockt_0
 
 jahr2013 <- jahr2013 %>%
   mutate(Sorte_Pflanzjahr = ifelse(Sorte_Pflanzjahr %in% c("unbestockt_NA", "unbestockt_0"), "unbestockt", Sorte_Pflanzjahr))
@@ -542,9 +503,8 @@ jahr2024 <- jahr2024 %>%
 jahr2025 <- jahr2025 %>%
   mutate(Sorte_Pflanzjahr = ifelse(Sorte_Pflanzjahr %in% c("unbestockt_NA", "unbestockt_0"), "unbestockt", Sorte_Pflanzjahr))
 
-#Ich will nun das Rod...jahr in den Tabellen sinvoll integrieren, dass es mit dem Merge kompatibel ist. 
 
-# Werte in 'Sorte_Pflanzjahr' ändern, wenn ein Wert in 'Rod...jahr' vorhanden ist
+# Change "sorte_pflanzjahr", wenn a value in "Rod...jahr" is found
 jahr2013<- jahr2013 %>%
   mutate(Sorte_Pflanzjahr = ifelse(!is.na(Rodungsjahr_2013), paste(Sorte_Pflanzjahr, Rodungsjahr_2013, sep = "_"), Sorte_Pflanzjahr))
 
@@ -579,9 +539,9 @@ jahr2025<- jahr2025 %>%
   mutate(Sorte_Pflanzjahr = ifelse(!is.na(Rodungsjahr_2025), paste(Sorte_Pflanzjahr, Rodungsjahr_2025, sep = "_"), Sorte_Pflanzjahr))
 
 
-# 3. Merging the files ##################################################################
-#einige Zeilen unterscheiden sich nur in der Fläche, was 
-#zu many-to-many relationships geführt hat. Ich kombiniere deshalb gleiche Einträge
+# 3. Merging the files #########################################################
+#Some entries only differ in the area, but variety, planting date etc. are the
+#same. This causes issues when merging. Duplicates are combined
 jahr2013 <- jahr2013 %>%
   group_by(Betrieb, Parzellennr., Sortennummer, Rebgemeinde, Pflanz...jahr, Sorte_Pflanzjahr,
            Rodungsjahr_2013, Weinmerkmal_2013) %>%
@@ -590,7 +550,6 @@ jahr2015 <- jahr2015 %>%
   group_by(Betrieb, Parzellennr., Sortennummer, Rebgemeinde, Pflanz...jahr, Sorte_Pflanzjahr,
            Rodungsjahr_2015, Weinmerkmal_2015) %>%
   summarise(Fläche_2015 = sum(Fläche_2015), .groups = "drop")
-#nun funktioniert das mergen. Deshalb mache ich es für alle jahre
 jahr2017 <- jahr2017 %>%
   group_by(Betrieb, Parzellennr., Sortennummer, Rebgemeinde, Pflanz...jahr, Sorte_Pflanzjahr,
            Rodungsjahr_2017, Weinmerkmal_2017) %>%
@@ -629,11 +588,15 @@ jahr2025 <- jahr2025 %>%
   summarise(Fläche_2025 = sum(Fläche_2025), .groups = "drop")
 
 #calculate area after clean up as check
-sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000 
+sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000
 sum(jahr2013$Fläche_2013, na.rm = TRUE)/10000
-#sometimes too low, sometimes too high
 
-# Erstelle eine Liste der Datensätze
+#Number of observations after clean up (N = 46'762) 
+nrow(jahr2013) + nrow(jahr2015) + nrow(jahr2017) + nrow(jahr2018) +
+  nrow(jahr2019) + nrow(jahr2020) + nrow(jahr2021) + nrow(jahr2022) +
+  + nrow(jahr2023) + nrow(jahr2024) + nrow(jahr2025)
+
+# List with all the data
 datensatz_liste <- list(
   unique(jahr2013[, c("Betrieb", "Parzellennr.", "Rebgemeinde", "Sorte_Pflanzjahr", "Pflanz...jahr", "Rodungsjahr_2013","Weinmerkmal_2013","Fläche_2013")]),
   unique(jahr2015[, c("Betrieb", "Parzellennr.", "Rebgemeinde", "Sorte_Pflanzjahr", "Pflanz...jahr", "Rodungsjahr_2015","Weinmerkmal_2015","Fläche_2015")]),
@@ -648,7 +611,7 @@ datensatz_liste <- list(
   unique(jahr2025[, c("Betrieb", "Parzellennr.", "Rebgemeinde", "Sorte_Pflanzjahr", "Pflanz...jahr", "Rodungsjahr_2025","Weinmerkmal_2025","Fläche_2025")])
 )
 
-# Verwende Reduce, um alle Datensätze zu mergen
+# Use Reduce, to merge all the data
 merged_data_all <- Reduce(function(x, y) merge(x, y, by = c("Betrieb", 
                                                             "Parzellennr.", 
                                                             "Sorte_Pflanzjahr", 
@@ -659,21 +622,11 @@ merged_data_all <- Reduce(function(x, y) merge(x, y, by = c("Betrieb",
 merged_data_all <- merged_data_all %>%
   distinct()
 
-#Nun hat die Fläche und die Weinmerkmale aller jahre allerdings sehr viele NAs. 
-Fläche
-#überprüfen
-# View(merged_data_all)
-sum(merged_data_all$Fläche_2013, na.rm = TRUE)/10000
-sum(merged_data_all$Fläche_2024, na.rm = TRUE)/10000
-#in frühen Jahren zu klein und nachher zu gross
-
-#direkt über die Jahre geht es ist die Fläche gleich, also nicht falsch
-#zusammengefügt
-(sum(jahr2013$Fläche_2013, na.rm = TRUE)/10000)
-(sum(jahr2024$Fläche_2024, na.rm = TRUE)/10000)
-
-#Neue Zeile Hinzufügen die nur den Sortennamen enthählt.
+#New row with only variety names
 merged_data_all$Rebsorte <- sub("_.*", "", merged_data_all$Sorte_Pflanzjahr)
+
+#area check
+sum(merged_data_all$Fläche_2013, na.rm = TRUE)/10000
 
 # 4. Reshape von wide to long ##############################################
 library(tidyr)
@@ -692,18 +645,22 @@ data_long <- merged_data_all %>%
 data_long$plantation_year <- as.numeric(sub(".*_", "", data_long$Sorte_Pflanzjahr))
 data_long$Rebsorte <- sub("_.*", "", data_long$Sorte_Pflanzjahr)
 
-#0, wenn noch nichts gepflanzt wurde
+#area check 
+sum(data_long$Fläche[which(data_long$year == 2013)], na.rm = TRUE)/10000
+
+#0, when nothing is planted
 data_long$Fläche_test <- ifelse((data_long$year <= data_long$plantation_year) & is.na(data_long$Fläche), 0, data_long$Fläche)
 data_long$group_id <- paste(data_long$Betrieb, data_long$Parzellennr., data_long$Sorte_Pflanzjahr, sep = "_")
 data_long <- data_long %>%
   group_by(group_id) %>%
   mutate(drop_flag = max(Fläche_test))
-#Weinmerkmal ergänzen 
+
+#Ensure that Weinmerkmal is 1 for PiWis and 0 otherwise
 interspezifisch <- c("Übrige Sorten rot \"Piwi\", nicht AOC", "Übrige Sorten weiss \"Piwi\", nicht AOC",
                      "Souvignier gris", "Johanniter", "Muscaris", "Regent", "Buffalo",
                      "Muscat bleu", "Cabernet Jura", "Baco noir", "Bianca", "Birstaler Muskat",
                      "Cabernet blanc", "De Chaunac", "DeChaunac", "Nero", "CAL 1-36",
-                     "Garanoir", "Divico", "Léon Millot", "Maréchal Foch", "Solaris",
+                     "Divico", "Léon Millot", "Maréchal Foch", "Solaris",
                      "Calardis blanc", "Calardis musqué", "Lac 1/02-11-12", "Lac 1/02-11-17",
                      "Lac 1/02 -05-35", "Sauvitage (WE 88-101-13)", "Seyval blanc",
                      "VB 05-A-100", "WE 86-708-86", "VB CAL 1-28", "Cabernet Carbon",
@@ -724,8 +681,6 @@ interspezifisch <- c("Übrige Sorten rot \"Piwi\", nicht AOC", "Übrige Sorten w
                      "RAC 3209", "CabVB rot", "CabVB weiss",  "Aurora", "Excelsior",
                      "Magliasino", "Ontario")
 data_long$Weinmerkmal <- ifelse(data_long$Rebsorte %in% interspezifisch, 1, 0)
-#fläche NA mit 0 ersetzen
-data_long$Fläche[is.na(data_long$Fläche)] <- 0
 
 data_long_unique <- data_long %>%
   distinct()
@@ -733,113 +688,142 @@ data_long_unique <- data_long %>%
 #delete entries with planting dates in the future
 data_long <- data_long[data_long$plantation_year < 2026,]
 
-#dieser Code habe ich von Lucca übernommen, er reduziert die Fläche aber von
-#602 ha auf 380, weshalb ich das dann nicht mehr ausgeführt habe
-#data_long <- data_long %>%
-# filter(!is.na(drop_flag))
+#area check
+sum(data_long$Fläche[which(data_long$year == 2013)], na.rm = TRUE)/10000
 
+#check number of observations
+nrow(data_long) /12 #I would expect 4000 to 5000 entries per year, not 7500
+#this problem will be fixed now
 
-#ab hier werden die Daten nur ausgewertet, nicht mehr verändert
+#When an estate is given from one farm to another, the farm ID changes but the
+#rest remains the same. This also causes issues. When the estate changes its
+#owner, from now on the farm ID from the first owner is kept. The entries that
+#are not needed anymore have an empty Weinmerkmal and can be deleted
+#Example: Estate 996599669969 belongs until 2018 to farm ZH 1926, afterwards ZH2149
+data_long <- data_long %>%
+  group_by(Parzellennr., Sorte_Pflanzjahr, Rebgemeinde, plantation_year, Rebsorte ) %>%
+  mutate(Betrieb = first(Betrieb)) %>%
+  filter(!is.na(Weinmerkmal)) %>%
+  ungroup()
+
+#Differing municipalities (for example seen with estate 3338) lead to NA in
+#the area column. When those entries are deleted, the number of observations is
+#correct
+data_long <- data_long[!is.na(data_long$Fläche),]
+
+#unbestockt --> area = 0
+data_long$Fläche <- ifelse(data_long$Rebsorte == "unbestockt", 0, data_long$Fläche)
+
+#area check
+sum(data_long$Fläche[which(data_long$year == 2013)], na.rm = TRUE)/10000
+#now it finally works!!
+sum(na.omit(jahr2013Original$Fläche..m2)) / 10000
+
+#2025 area check
+sum(data_long$Fläche[which(data_long$year == 2025)], na.rm = TRUE)/10000
+sum(na.omit(jahr2025Original$Fläche..m2)) / 10000
+
 #5. Number of grape varieties over the years ###################################
-# jahr2013mitRebsorte <- jahr2013
-# jahr2013mitRebsorte$Rebsorte <-  sub("_.*", "", jahr2013mitRebsorte$Sorte_Pflanzjahr)
-# length(unique(jahr2013mitRebsorte$Rebsorte))
-#
-# jahr2025mitRebsorte <- jahr2025
-# jahr2025mitRebsorte$Rebsorte <-  sub("_.*", "", jahr2025mitRebsorte$Sorte_Pflanzjahr)
-# length(unique(jahr2025mitRebsorte$Rebsorte))
+jahr2013mitRebsorte <- jahr2013
+jahr2013mitRebsorte$Rebsorte <-  sub("_.*", "", jahr2013mitRebsorte$Sorte_Pflanzjahr)
+length(unique(jahr2013mitRebsorte$Rebsorte)) #99 grape varieties in 2013
+
+jahr2025mitRebsorte <- jahr2025
+jahr2025mitRebsorte$Rebsorte <-  sub("_.*", "", jahr2025mitRebsorte$Sorte_Pflanzjahr)
+length(unique(jahr2025mitRebsorte$Rebsorte))
 
 #area of grapes compared to canton zurich
-# sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000 #fläche aller Trauben
-# (zürich$KANTONSFLA) #fläche von Zürich in Hektaren
-# #41 % des Kantons sind laut Agrarbericht 2023 landwirtschaftliche Nutzfläche
-# (zürich$KANTONSFLA * 0.41)
-# #fläche von grapes im Verhältnis zur LN
-# (sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000) / (zürich$KANTONSFLA * 0.41)
+sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000 #fläche aller Trauben
+#zurich has an area of 1729 km2 (source: statista) --> 172900 ha
+#According to the 2023 Agricultural Report, 41% of the canton consists of agricultural land
+#area of grapes in relation to agricultural land in %
+(sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000) / (172900 * 0.41) * 100 
+# --> less than 1 % of the entire area of Zurich is used for grapes
 
-# 6. Fläche Piwi vs. Gesamtfläche ##############################################
-#wieso hat es nun weniger piwis als früher?
-sum(shapefile$FLAECHE[which(shapefile$reben == 1)], na.rm = TRUE)
-
+# 6. Area Piwi vs. Area overall ##############################################
 x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2013)], na.rm = TRUE)/10000 #piwi
 y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2013)], na.rm = TRUE)/10000 #konventionell
-x/y
-y #area too low
+x/y #areas of PiWis was 7 % in 2013
+x + y #area a bit too high
 
 x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2025)], na.rm = TRUE)/10000 #piwi
 y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2025)], na.rm = TRUE)/10000 #konventionell
-x/y
-y #area too low
+x/y #in 2025, the PiWi area increased to 19 %
+x + y #area too low
 
+#year 2022 to compare with other sources
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2022)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2022)], na.rm = TRUE)/10000 #konventionell
+x/y #in 2022, this code has 14 % while other sources cite 
 
-# 7. Anwendungsbeispiele #######################################################
+# 7. Practical examples #######################################################
 ## 7.1 Area plot ----------------------------------------------------------------------------
-#seems to low
 yearly_acerage <- data_long %>%
   group_by(year) %>%
   summarise(yearly_acerage = sum(na.omit(Fläche)))
 
-#I take the data from each year directly
-anbaufläche2013 <- sum(jahr2013$Fläche_2013, na.rm = TRUE)/10000
-anbaufläche2015 <- sum(jahr2015$Fläche_2015, na.rm = TRUE)/10000
-anbaufläche2017 <- sum(jahr2017$Fläche_2017, na.rm = TRUE)/10000
-anbaufläche2018 <- sum(jahr2018$Fläche_2018, na.rm = TRUE)/10000
-anbaufläche2019 <- sum(jahr2019$Fläche_2019, na.rm = TRUE)/10000
-anbaufläche2020 <- sum(jahr2020$Fläche_2020, na.rm = TRUE)/10000
-anbaufläche2021 <- sum(jahr2021$Fläche_2021, na.rm = TRUE)/10000
-anbaufläche2022 <- sum(jahr2022$Fläche_2022, na.rm = TRUE)/10000
-anbaufläche2023 <- sum(jahr2023$Fläche_2023, na.rm = TRUE)/10000
-anbaufläche2024 <- sum(jahr2024$Fläche_2024, na.rm = TRUE)/10000
-anbaufläche2025 <- sum(jahr2025$Fläche_2025, na.rm = TRUE)/10000
-anbaufläche <- c(anbaufläche2013, anbaufläche2015, anbaufläche2017, anbaufläche2018,
-                 anbaufläche2019, anbaufläche2020, anbaufläche2021, anbaufläche2022, 
-                 anbaufläche2023, anbaufläche2024, anbaufläche2025)
-
-years <- c(2013, 2015, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025)
-yearly_acerage <- data.frame(years, anbaufläche)
-
 ggplot() +
-  geom_line(data = yearly_acerage, aes(x = years, y = (anbaufläche))) +
+  geom_line(data = yearly_acerage, aes(x = year, y = yearly_acerage / 10000)) +
   #ylim(0,50000000) +
   labs(y = "Area of grapes in ha", x = "Year") +
   theme_minimal()
 
-#anzahl betriebe
-length(unique(merged_data_all$Betrieb))
-#anzahl plots
-length(unique(merged_data_all$Parzellennr.))
-length(unique(data_long$Parzellennr.))
-summary(data_long$Fläche)
-View(data_long)
-#delete fläche 0 to get a more meaningful mean
-data_long <- data_long[data_long$Fläche > 0,]
+sum(data_long$Fläche[which(data_long$year == 2013)], na.rm = TRUE)/10000
+
+#I take the data from each year directly
+anbaufläche2013 <- sum(jahr2013Original$Fläche..m2, na.rm = TRUE)/10000
+anbaufläche2015 <- sum(jahr2015Original$Fläche..m2, na.rm = TRUE)/10000
+anbaufläche2017 <- sum(jahr2017Original$Fläche..m2, na.rm = TRUE)/10000
+anbaufläche2018 <- sum(jahr2018Original$Fläche..m2, na.rm = TRUE)/10000
+anbaufläche2019 <- sum(jahr2019Original$Fläche..m2, na.rm = TRUE)/10000
+anbaufläche2020 <- sum(jahr2020Original$Fläche..m2, na.rm = TRUE)/10000
+anbaufläche2021 <- sum(jahr2021Original$Fläche..m2, na.rm = TRUE)/10000
+anbaufläche2022 <- sum(jahr2022Original$Fläche..m2, na.rm = TRUE)/10000
+anbaufläche2023 <- sum(jahr2023Original$Fläche..m2, na.rm = TRUE)/10000
+anbaufläche2024 <- sum(jahr2024Original$Fläche..m2, na.rm = TRUE)/10000
+anbaufläche2025 <- sum(jahr2025Original$Fläche..m2, na.rm = TRUE)/10000
+#2025 is left out as the area would be much too high
+anbaufläche <- c(anbaufläche2013, anbaufläche2015, anbaufläche2017, anbaufläche2018,
+                 anbaufläche2019, anbaufläche2020, anbaufläche2021, anbaufläche2022, 
+                 anbaufläche2023, anbaufläche2024)
+
+years <- c(2013, 2015, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024)
+yearly_acerage2 <- data.frame(years, anbaufläche)
+
+#yearly_acerage2 --> directly from farmers
+#yearly_acerage --> after correction
+
+ggplot() +
+  geom_line(data = yearly_acerage, aes(x = year, y = (yearly_acerage/10000), color = "yearly_acerage"), linewidth = 1.2) +
+  geom_line(data = yearly_acerage2, aes(x = years, y = anbaufläche, color = "anbaufläche"), linewidth = 1.2) +
+  labs(title = "Development of the Area with Planted Grapes", color = "Variable", 
+       x = "Years", y = "Area with grapes in ha") +
+  scale_color_manual(                
+    values = c("yearly_acerage" = "red", "anbaufläche" = "blue"),
+    labels = c("anbaufläche" = "Areas provided by farmers", 
+               "yearly_acerage" = "Areas after correction")
+  ) +
+  scale_x_continuous(breaks = seq(min(yearly_acerage$year), max(yearly_acerage$year), by = 2)) +
+  theme_minimal()
 
 
-
-## 7.2 Export ----Fläche## 7.2 Export --------------------------------------------------------------------------------------------------------------------------------------------------
+## 7.2 Export ------------------------------------------------------------------
 #export
 
 library(openxlsx)
 
-# Als Excel speichern
+# Safe as Excel 
 write.xlsx(merged_data_all, file = "merged_data_all.xlsx")
 
 
 ## 7.3 Betrieb Example---------------------------------------------------------
-#Was kann man nun mit diesem Merge machen?
-
-zh1 <- merged_data_all %>% filter(Betrieb == "ZH1")
-
-
-print(zh1)
-
-
-# Erforderliche Bibliotheken laden
 library(ggplot2)
 library(tidyr)
 library(grid)
 
-# Beispieldatensatz erstellen
+zh1 <- merged_data_all %>% filter(Betrieb == "ZH1")
+print(zh1)
+
 data <- data.frame(
   Betrieb = rep("ZH1", 6),
   Parzellennr. = rep(103, 6),
@@ -859,7 +843,7 @@ data <- data.frame(
   Fläche_m2_2023 = c(3180, 1220, 500, 1500, 2200, 900)
 )
 
-# Datensatz ins lange Format bringen
+#long format
 data_long <- data %>%
   pivot_longer(
     cols = starts_with("Fläche_m2"),
@@ -868,10 +852,7 @@ data_long <- data %>%
   ) %>%
   mutate(Jahr = as.numeric(gsub("Fläche_m2_", "", Jahr)))  # Jahr aus Spaltennamen extrahieren
 
-# Fehlende Werte entfernen
 data_long <- na.omit(data_long)
-
-
 
 ggplot(data_long, aes(x = Jahr, y = Fläche_m2, fill = Sorte_Pflanzjahr)) +
   geom_bar(stat = "identity", position = "stack") +
@@ -886,13 +867,12 @@ ggplot(data_long, aes(x = Jahr, y = Fläche_m2, fill = Sorte_Pflanzjahr)) +
     legend.position = "bottom",
     legend.text = element_text(size = 8),
     legend.key.size = unit(0.5, "cm"),
-    legend.box = "horizontal"                  # Legende horizontal ausrichten
+    legend.box = "horizontal"                  
   ) +
-  guides(fill = guide_legend(nrow = 2))        # Legende in 2 Zeilen umbrechen
+  guides(fill = guide_legend(nrow = 2))        
 
 
-
-## 7.4 Fläche pro Sorte über die Jahre----------------------------------------------
+## 7.4 Area for each variety over the years-------------------------------------
 Blauburgunder <- merged_data_all %>% filter(Rebsorte == "Blauburgunder")
 
 
@@ -900,17 +880,15 @@ data_filtered <- Blauburgunder[,c("Fläche_2013", "Fläche_2015", "Fläche_2017"
                                  "Fläche_2018", "Fläche_2019", "Fläche_2020", 
                                  "Fläche_2021", "Fläche_2022", "Fläche_2023")]
 
-# Summiere die Werte für jede Spalte und teile durch 10.000 (m² -> ha)
+#Sum he values for each column and divide with 10000
 summed_areas <- colSums(data_filtered, na.rm = TRUE) / 10000
 
-
-# Daten in ein DataFrame für ggplot umwandeln
+# Convert to data frame
 plot_data <- data.frame(
   Jahr = as.numeric(sub("Fläche_", "", names(summed_areas))),
   Fläche_m2 = summed_areas
 )
 
-# Säulendiagramm erstellen
 ggplot(plot_data, aes(x = Jahr, y = Fläche_m2)) +
   geom_bar(stat = "identity", fill = "steelblue") +
   theme_minimal() +
@@ -918,4 +896,4 @@ ggplot(plot_data, aes(x = Jahr, y = Fläche_m2)) +
        x = "Jahr",
        y = "Gesamte Anbaufläche (ha)")
 
-nrow(data_long)
+#less than 46'000 as unbestockt was deleted
