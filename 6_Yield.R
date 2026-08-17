@@ -21,7 +21,7 @@ yield2024 <- read_excel("2_data/1_raw/Ertrag/Weinlese 2024.xlsx")
 yield2025 <- read_excel("2_data/1_raw/Ertrag/Weinlese 2025.xlsx")
 
 #2. Clean up ###################################################################
-#Bei einigen Jahren beinhaltet die erste Zeile die Spaltennamen
+#Some years have the column names in the first row, I delete this row
 colnames(yield2018) <- yield2018[1, ]
 yield2018 <- yield2018[-1, ] # Remove the first row
 colnames(yield2019) <- yield2019[1, ]
@@ -39,8 +39,7 @@ yield2024 <- yield2024[-1, ]
 colnames(yield2025) <- yield2025[1, ]
 yield2025 <- yield2025[-1, ]
 
-head(yield2018[,5])
-#view(yield2025)
+
 yield2013[yield2013$Gemeinde...3 != yield2013$Gemeinde...5, ]
 #sometimes, the original files contain two columns with municipalities. 
 #check that the two columns have the same information
@@ -64,7 +63,7 @@ yield2023 <- yield2023[,-5]
 yield2024 <- yield2024[,-5]
 yield2025 <- yield2025[,-5]
 
-#3. Erntemenge über die Jahre ##################################################
+#3. Yield over the years########################################################
 gesamtertrag13 <- sum(yield2013$`Menge, kg`, na.rm = TRUE)/1000 #tonnen
 gesamtertrag14 <- sum(yield2014$`Menge, kg`, na.rm = TRUE)/1000
 gesamtertrag15 <- sum(yield2015$`Menge, kg`, na.rm = TRUE)/1000
@@ -91,130 +90,62 @@ ertragOverview <- c(gesamtertrag13, gesamtertrag14, gesamtertrag15, gesamtertrag
                     gesamtertrag17, gesamtertrag18, gesamtertrag19, gesamtertrag20,
                     gesamtertrag21, gesamtertrag22, gesamtertrag23, gesamtertrag24,
                     gesamtertrag25)
-jahre <- c(13:25)
-df <- data.frame(jahre, ertragOverview)
-plot(df, type = "l")
-#strong differences over the years
+jahre <- c(2013:2025)
+ertragOverview <- data.frame(jahre, ertragOverview)
 
-#4. Erntemenge mit Hagel überlappen ############################################
-head(haildays_sf)
-#only get the haildays of Zurich
-#Grenze von Zürich
+#4.Overlap yield with hail #####################################################
+head(haildays_2cm_extract_zurich$day)
+haildays_2cm_extract_zurich <- st_drop_geometry(haildays_2cm_extract_zurich)
 
-kantone <- st_read("Y:/27_cadaster_canton_zurich/27_cadaster_canton_zurich/2_data/1_raw/Kanton/swissBOUNDARIES3D_1_5_TLM_KANTONSGEBIET.shp")
-zürich <- kantone[6,]
+#haildays per year 
+totalhaildays2013 <- sum(na.omit(haildays_2cm_extract_zurich$days2013))
+totalhaildays2014 <- sum(na.omit(haildays_2cm_extract_zurich$days2014))
+totalhaildays2015 <- sum(na.omit(haildays_2cm_extract_zurich$days2015))
+totalhaildays2016 <- sum(na.omit(haildays_2cm_extract_zurich$days2016))
+totalhaildays2017 <- sum(na.omit(haildays_2cm_extract_zurich$days2017))
+totalhaildays2018 <- sum(na.omit(haildays_2cm_extract_zurich$days2018))
+totalhaildays2019 <- sum(na.omit(haildays_2cm_extract_zurich$days2019))
+totalhaildays2020 <- sum(na.omit(haildays_2cm_extract_zurich$days2020))
+totalhaildays2021 <- sum(na.omit(haildays_2cm_extract_zurich$days2021))
+totalhaildays2022 <- sum(na.omit(haildays_2cm_extract_zurich$days2022))
+totalhaildays2023 <- sum(na.omit(haildays_2cm_extract_zurich$days2023))
+totalhaildays2024 <- sum(na.omit(haildays_2cm_extract_zurich$days2024))
+totalhaildays2025 <- sum(na.omit(haildays_2cm_extract_zurich$days2025))
 
-#nur die Haildays behalten, dessen Koordinaten sich in Zürich befinden
-#mithilfe von GIS gemacht (File mit Kantonsgrenze und File mit Hagel jeweils für die ganze Schweiz
-#eingelesen und dann mit intersect die Überlappungen gesucht)
-hagelTageZürich <- st_read("Y:/27_cadaster_canton_zurich/27_cadaster_canton_zurich/hagelTageZürich.shp")
+haildays_summary <- data.frame(totalhaildays2013, totalhaildays2014, totalhaildays2015, 
+                               totalhaildays2016, totalhaildays2017, totalhaildays2018,
+                               totalhaildays2019, totalhaildays2020, totalhaildays2021, 
+                               totalhaildays2022, totalhaildays2023, totalhaildays2024,
+                               totalhaildays2025)
 
-head(hagelTageZürich)
-#hier noch die Rebgemeinden hinzufügen
-View(muniShapeSimpel)
-muniShapeSimpel <- muniShape[, -c(1:15)]
-muniShapeSimpel <- muniShapeSimpel[, -c(2:8)]
-df <- df[, -c(2, 4)]
+haildays_long <- haildays_summary %>%
+  pivot_longer(
+    cols =  starts_with("totalhaildays"), # columns to reshape
+    names_to = "year", # new column for former column names
+    values_to = "haildays" # new column for values
+  )
 
-st_transform(hagelTageZürich, 2056)
-st_transform(muniShapeSimpel, 2056)
+haildays_long$year <- sub("totalhaildays", "", haildays_long$year)
+haildays_long$year <- as.integer(haildays_long$year)
 
-st_join(hagelTageZürich, muniShapeSimpel)
 
-#haildays per year 2013
-totalhaildays2013 <- sum(na.omit(hagelTageZürich$hldY_14))
-totalhaildays2013
-totalhaildays2014 <- sum(na.omit(hagelTageZürich$hldY_15))
-totalhaildays2015 <- sum(na.omit(hagelTageZürich$hldY_16))
-totalhaildays2016 <- sum(na.omit(hagelTageZürich$hldY_17))
-totalhaildays2017 <- sum(na.omit(hagelTageZürich$hldY_18))
-totalhaildays2018 <- sum(na.omit(hagelTageZürich$hldY_19))
-totalhaildays2019 <- sum(na.omit(hagelTageZürich$hldY_20))
-totalhaildays2020 <- sum(na.omit(hagelTageZürich$hldY_21))
-totalhaildays2021 <- sum(na.omit(hagelTageZürich$hldY_22))
-totalhaildays2022 <- sum(na.omit(hagelTageZürich$hldY_23))
-totalhaildays2023 <- sum(na.omit(hagelTageZürich$hldY_23))
-totalhaildays2024 <- sum(na.omit(hagelTageZürich$hldY_24))
-totalhaildays2025 <- sum(na.omit(hagelTageZürich$hldY_25))
+hagelundertrag <- ggplot() +
+  geom_line(data = haildays_long, aes(x = year, y = haildays, color = "Days with hail")) +
+  geom_line(data = ertragOverview, aes(x = jahre, y = ertragOverview, color = "Grape yield")) +
+  labs(title = "Hail and Yield", x = "Years", y = "Yield in tons and haildays per year") +
+  scale_x_continuous(
+    breaks = seq(floor(min(haildays_long$year)), ceiling(max(haildays_long$year)), 2) # integers only
+  ) +
+  scale_color_manual(
+    name = NULL,   # Legendentitel ausblenden
+    values = c("Days with hail" = "red",
+               "Grape yield"   = "blue")
+  )
 
-haildaysOverview <- c(totalhaildays2013, totalhaildays2014, totalhaildays2015, 
-                      totalhaildays2016, totalhaildays2017, totalhaildays2018,
-                      totalhaildays2019, totalhaildays2020, totalhaildays2021,
-                      totalhaildays2022, totalhaildays2023, totalhaildays2024,
-                      totalhaildays2025)
-ertragOverview <- c(gesamtertrag13, gesamtertrag14, gesamtertrag15, gesamtertrag16,
-                    gesamtertrag17, gesamtertrag18, gesamtertrag19, gesamtertrag20,
-                    gesamtertrag21, gesamtertrag22, gesamtertrag23, gesamtertrag24,
-                    gesamtertrag25)
-jahre <- c(13:23)
-df <- data.frame(jahre, ertragOverview, haildaysOverview)
-df
-hagelundertrag <- ggplot(df, aes(x = jahre)) +
-  geom_line(aes(y = haildaysOverview, color = "Hail")) +
-  geom_line(aes(y = ertragOverview, color = "Yield")) +
-  labs(title = "Hail and Yield", x = "Jahre", y = "Yield in tons and haildays per year") +
-  scale_color_manual(values = c("Hail" = "red", "Yield" = "blue"))
 hagelundertrag
-ggsave(hagelundertrag, file = "3_output/HailandYield.png", width = 25, height = 20, bg = "white", units = "cm")  
 
+colnames(ertragOverview)[colnames(ertragOverview) == "jahre"] <- "year"
+df <- full_join(haildays_long, ertragOverview)
 
-#Hageltage sind nicht relevant, da da auch Tage mitgezählt werden, bei denen die
-#Körner zu klein sind, um schaden anzurichten. Deshalb nun mit max. average
-#hail size
-head(na.omit(hailsize_2cm_extract))
-head(zürich)
-zürich <- st_transform(zürich, 2056)
-
-# #join to only get hail in Zurich
-# HailsizeInZurich <- st_join(hailsize_2cm_extract, zürich)
-# head(HailsizeInZurich)
-
-#save as shp
-hailsize_2cm <- st_as_sf(hailsize_2cm, crs = 2056, coords = c("lon", "lat"))
-st_write(hailsize_2cm, "2_data/hailsize_2cm.shp")
-
-hagelSizeZürich <- st_read("Y:/27_cadaster_canton_zurich/27_cadaster_canton_zurich/2_data/hailsize_2cm_all_years/hailsize_2cm_all_year.shp")
-View(hagelSizeZürich)
-
-#clean up
-hagelSizeZürich <- hagelSizeZürich[,-c(1, 16:35)]
-
-#Nun will ich für jedes Jahr (= jede Spalte) den Durchschnitt der Hagelgrösse.
-#So habe ich dann für jeden Ort, aber zur gleichen Zeit den Durchschnitt.
-mean_y11 <- mean(hagelSizeZürich$MZCY_12, na.rm = TRUE)
-mean_y12 <- mean(hagelSizeZürich$MZCY_13, na.rm = TRUE)
-mean_y13 <- mean(hagelSizeZürich$MZCY_14, na.rm = TRUE)
-mean_y14 <- mean(hagelSizeZürich$MZCY_15, na.rm = TRUE)
-mean_y15 <- mean(hagelSizeZürich$MZCY_16, na.rm = TRUE)
-mean_y16 <- mean(hagelSizeZürich$MZCY_17, na.rm = TRUE)
-mean_y17 <- mean(hagelSizeZürich$MZCY_18, na.rm = TRUE)
-mean_y18 <- mean(hagelSizeZürich$MZCY_19, na.rm = TRUE)
-mean_y19 <- mean(hagelSizeZürich$MZCY_20, na.rm = TRUE)
-mean_y20 <- mean(hagelSizeZürich$MZCY_21, na.rm = TRUE)
-mean_y21 <- mean(hagelSizeZürich$MZCY_22, na.rm = TRUE)
-mean_y22 <- mean(hagelSizeZürich$MZCY_23, na.rm = TRUE)
-mean_y23 <- mean(hagelSizeZürich$MZCY_24, na.rm = TRUE)
-
-mean_hailsize_per_year <- c(mean_y13, mean_y14, mean_y15, mean_y16,
-                            mean_y17, mean_y18, mean_y19, mean_y20, 
-                            mean_y21,
-                            mean_y22, mean_y23, mean_y24, mean_y25) #jahr 13 bis 23
-head(mean_hailsize_per_year)
-ertragOverview <- c(gesamtertrag13, gesamtertrag14, gesamtertrag15, gesamtertrag16,
-                    gesamtertrag17, gesamtertrag18, gesamtertrag19, gesamtertrag20,
-                    gesamtertrag21, gesamtertrag22, gesamtertrag23, gesamtertrag24,
-                    gesamtertrag25)
-jahre <- c(13:25)
-df <- data.frame(jahre, mean_hailsize_per_year, ertragOverview)
-
-
-#plot
-hagelundertrag2 <- ggplot(df, aes(x = jahre)) +
-  geom_line(aes(y = mean_hailsize_per_year*1000, color = "Hailsize")) +
-  geom_line(aes(y = ertragOverview, color = "Yield")) +
-  labs(title = "Hail and Yield", x = "Years", y = "Yield in tons and average of the maximal hail size per year * 1000") +
-  scale_color_manual(values = c("Hailsize" = "red", "Yield" = "blue"))
-hagelundertrag2
-ggsave(hagelundertrag2, file = "3_output/HailsizeandYield.png", width = 25, height = 20, bg = "white", units = "cm")  
-
-summary(lm(ertragOverview ~ mean_hailsize_per_year, data = df))
+summary(lm(ertragOverview ~ haildays, data = df))
+#no signficant correlation between yield and hail
