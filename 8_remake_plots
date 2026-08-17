@@ -1,0 +1,351 @@
+#admin
+library(ggplot2)
+library(tidyr)
+library(sf)
+
+#Histogram with plot size ######################################################
+head(merged_data_all$Weinmerkmal)
+
+ggplot(merged_data_all, aes(x = Fläche, fill = factor(Weinmerkmal))) +
+  geom_histogram(binwidth = 500) +
+  scale_fill_manual(values=c("red", "blue")) +
+  labs(title = "Distribution of Plot Size", x = "Area per Plot in m^2", y = "Frequency of Plot") +
+  labs(fill='Grape Variety') +
+  scale_fill_discrete(labels=c('Conventional', 'PiWis'))
+
+summary(merged_data_all$Fläche)
+
+#Land use ######################################################################
+shapefile <- st_read("2_data/Landwirtschaftliche_Kulturflächen_(aktuell)/Landwirtschaftli...achen_-aktuell/LW_NUTZUNGSFLAECHEN_AKTUELL_F.shp")
+
+df <- st_drop_geometry(shapefile)
+
+df$reben <- as.numeric(ifelse(df$BLW_NAME %in% c(
+  "Rebflächen mit natürlicher  Artenvielfalt",
+  "Reben"
+), 1, 0))
+
+df <- df %>%
+  dplyr::select(reben)
+
+shapefile <- cbind(shapefile, df)
+
+Zürisee <- st_read("Y:/27_cadaster_canton_zurich/27_cadaster_canton_zurich/Zürichsee.shp")
+Zürisee <- st_transform(Zürisee, 2056)
+Griifesee <- st_read("Y:/27_cadaster_canton_zurich/27_cadaster_canton_zurich/Griifesee.shp")
+Griifesee <- st_transform(Griifesee, 2056)
+
+p <- ggplot() +
+  #Trauben - gefüllt
+  geom_sf(
+    data = shapefile[shapefile$reben == 1, ],
+    aes(fill = "Grapes"),
+    color = NA
+  ) +
+  
+  #(Other crops) – nur Umriss
+  geom_sf(
+    data = shapefile[shapefile$reben == 0, ],
+    fill = NA,
+    color = "grey40",
+    linewidth = 0.01
+  ) +
+  
+  scale_fill_manual(
+    name = "Crop type",
+    values = c("Grapes" = "red"),
+    labels = c("Grapes")
+  ) +
+  
+    geom_sf(data = Zürisee, fill = "lightblue", lwd = 0) + #muss vor coord_sf sein (?)
+  coord_sf(crs = st_crs(2056)) +
+  geom_sf(data = Griifesee, fill = "lightblue", lwd = 0) +
+  coord_sf(crs = st_crs(2056)) +
+  
+  coord_sf(
+    xlim = c(2669087.36213217, 2713875.597690578),
+    ylim = c(1227293.256352458, 1276966.884853686),
+    expand = FALSE
+  ) +
+  
+  
+  theme_minimal()
+
+
+ggsave("3_output/test.png", plot = p, width = 20, height = 20, dpi = 300, units = "cm", bg = "white")
+
+
+#piwi share over time ##########################################################
+head(data_long)
+
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2013)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2013)], na.rm = TRUE)/10000 #konventionell
+PiwiPercentage2013 <- x/y
+
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2015)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2015)], na.rm = TRUE)/10000 #konventionell
+PiwiPercentage2015 <- x/y
+
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2017)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2017)], na.rm = TRUE)/10000 #konventionell
+PiwiPercentage2017 <- x/y
+
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2018)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2018)], na.rm = TRUE)/10000 #konventionell
+PiwiPercentage2018 <- x/y
+
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2019)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2019)], na.rm = TRUE)/10000 #konventionell
+PiwiPercentage2019 <- x/y
+
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2020)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2020)], na.rm = TRUE)/10000 #konventionell
+PiwiPercentage2020 <- x/y
+
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2021)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2021)], na.rm = TRUE)/10000 #konventionell
+PiwiPercentage2021 <- x/y
+
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2022)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2022)], na.rm = TRUE)/10000 #konventionell
+PiwiPercentage2022 <- x/y
+
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2023)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2023)], na.rm = TRUE)/10000 #konventionell
+PiwiPercentage2023 <- x/y
+
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2024)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2024)], na.rm = TRUE)/10000 #konventionell
+PiwiPercentage2024 <- x/y
+
+x <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 1 & data_long$year == 2025)], na.rm = TRUE)/10000 #piwi
+y <- sum(data_long$Fläche[which(data_long$Weinmerkmal == 0 & data_long$year == 2025)], na.rm = TRUE)/10000 #konventionell
+PiwiPercentage2025 <- x/y
+
+years <- c(2013, 2015, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025)
+PiwiPercentages <- c(PiwiPercentage2013, PiwiPercentage2015, PiwiPercentage2017,
+                     PiwiPercentage2018, PiwiPercentage2019, PiwiPercentage2020,
+                     PiwiPercentage2021, PiwiPercentage2022, PiwiPercentage2023,
+                     PiwiPercentage2024, PiwiPercentage2025)
+PiwiPercentages <- PiwiPercentages*100
+conventional <- c(NA, NA, NA, NA, NA, NA, 3, NA, 3.5, 3, 4.2)
+df <- data.frame(years, PiwiPercentages, conventional)
+df
+
+
+# Long format
+df_long <- pivot_longer(
+  df,
+  cols = c(PiwiPercentages, conventional),
+  names_to = "Type",
+  values_to = "Percentage"
+)
+
+# Plot
+ggplot(df_long, aes(x = years, y = Percentage, color = Type)) +
+  geom_line() +
+  
+  scale_x_continuous(
+    breaks = seq(floor(min(df_long$years)), ceiling(max(df_long$years)), 1) # integers only
+  ) +
+  
+  geom_point() +
+  scale_color_manual(
+    values = c(
+      "PiwiPercentages" = "red",
+      "conventional" = "grey40"
+    ),
+    labels = c(
+      "conventional" = "Swiss Average",
+      "PiwiPercentages" = "Average in Zurich"
+      
+    )
+  ) +
+  labs(
+    x = "Year",
+    y = "Percent of Area with PiWis",
+    color = "",
+    title = "PiWi Uptake in Zurich Compared to Switzerland"
+  ) +
+  
+  theme_minimal()
+
+
+#Mean hailsize over Zurich #####################################################
+muniShape <- st_transform(muniShape, 2056)
+hailsize_extract_zurich <- st_filter(tmp_df02_hailsize, zürich)
+
+#now zoomed in to Zurich
+hailSizePlotCropped <- ggplot() +
+
+  geom_sf(data = hailsize_extract_zurich, aes(color = RowMeansAllYears), shape = 15, size = 7) +
+  scale_colour_continuous(low = "white", high = "red", name = "Hail Size") +
+  
+  geom_sf(data = muniShape, fill = NA, colour = "#555555", size = 0.02) +
+  
+  geom_sf(data = zürich, fill = NA, color = "black", size = 1) +
+  
+  geom_sf(data = Zürisee, fill = "lightblue", lwd = 0) + 
+  coord_sf(crs = st_crs(2056)) +
+  geom_sf(data = Griifesee, fill = "lightblue", lwd = 0) +
+  coord_sf(crs = st_crs(2056)) +
+  
+  coord_sf(xlim = c(2669087.36213217, 2713875.597690578), ylim = c(1227293.256352458, 1276966.884853686)) +
+  theme_minimal() +
+  
+  labs(
+    title = "Mean Size of Hail Grain from 2013 to 2025 ", 
+    subtitle = "Lighter Red = smaller hail grains, \ndarker red = larger grains of hail"
+  ) +
+  
+  theme(
+    panel.grid = element_blank(),
+    plot.title = element_text(face = "bold")
+  ) 
+
+hailSizePlotCropped
+
+
+#Mean haildays over Zurich #####################################################
+haildaysPlotCropped <- ggplot() +
+
+  geom_sf(data = haildays_2cm_extract_zurich, aes(color = RowMeansAllYears), shape = 15, size = 7) +
+  scale_colour_continuous(low = "white", high = "red", name = "Hail Days") +
+  
+  geom_sf(data = muniShape, fill = NA, colour = "#555555", size = 0.02) +
+  
+  geom_sf(data = zürich, fill = NA, color = "black", size = 1) +
+  
+  geom_sf(data = Zürisee, fill = "lightblue", lwd = 0) + 
+  coord_sf(crs = st_crs(2056)) +
+  geom_sf(data = Griifesee, fill = "lightblue", lwd = 0) +
+  coord_sf(crs = st_crs(2056)) +
+  
+  coord_sf(xlim = c(2669087.36213217, 2713875.597690578), ylim = c(1227293.256352458, 1276966.884853686)) +
+  theme_minimal() +
+  labs(
+    title = "Mean Days with Hail from 2013 to 2025",
+    subtitle = "Lighter red = days with hail less frequent, \ndarker red = days with hail more frequent"
+  ) +
+  theme(
+    panel.grid = element_blank(),
+    plot.title = element_text(face = "bold")
+  ) 
+
+haildaysPlotCropped
+
+
+#piwi vs conventional across Zurich ############################################
+shapefile <- st_read("2_data/Landwirtschaftliche_Kulturflächen_(aktuell)/Landwirtschaftli...achen_-aktuell/LW_NUTZUNGSFLAECHEN_AKTUELL_F.shp")
+Zürisee <- st_read("Y:/27_cadaster_canton_zurich/27_cadaster_canton_zurich/Zürichsee.shp")
+Griifesee <- st_read("Y:/27_cadaster_canton_zurich/27_cadaster_canton_zurich/Griifesee.shp")
+merged_data_all <- merged_data_all_original
+merged_data_all <- merged_data_all[!is.na(merged_data_all$year),]
+merged_data_all <- merged_data_all[!is.na(merged_data_all$Weinmerkmal),]
+
+p <- ggplot() +
+  
+  geom_sf(data = shapefile, fill = NA, color = alpha("darkgrey", 0.7), linewidth = 0.05) +
+  
+  geom_sf(data = muniShape, fill = NA, colour = "black", size = 0.05) +
+  
+  geom_sf(data = zürich, fill = NA, colour = "black", size = 0.5) +
+  
+  labs(title = "Land Use of Agricultural Areas in Zurich") +
+  
+  geom_sf(data = merged_data_all$geometry, aes(fill = as.factor(merged_data_all$Weinmerkmal)), color = NA) +
+  
+  scale_fill_manual(name = "Grape variety", 
+                    breaks = c(0,1), 
+                    values = c("navyblue", "red"), 
+                    labels = c("Conventional grapes", "Piwi")) +
+  
+  geom_sf(data = Zürisee, fill = "lightblue", lwd = 0) + #muss vor coord_sf sein (?)
+  coord_sf(crs = st_crs(2056)) +
+  geom_sf(data = Griifesee, fill = "lightblue", lwd = 0) +
+  coord_sf(crs = st_crs(2056)) +
+
+  
+  coord_sf(
+    xlim = c(2669087.36213217, 2713875.597690578),
+    ylim = c(1227293.256352458, 1276966.884853686),
+    expand = FALSE
+  ) 
+
+ggsave("3_output/PiwiGrapeOther.png", plot = p, width = 30, height = 30, dpi = 300, units = "cm", bg = "white")
+
+
+#Grapes across Zurich ##########################################################
+shapefile <- st_read("2_data/Landwirtschaftliche_Kulturflächen_(aktuell)/Landwirtschaftli...achen_-aktuell/LW_NUTZUNGSFLAECHEN_AKTUELL_F.shp")
+merged_data_all_original <- full_join(data_long, shapefile) 
+merged_data_all <- st_as_sf(merged_data_all_original)
+muniShape <- st_read("Y:/27_cadaster_canton_zurich/27_cadaster_canton_zurich/2_data/1_raw/Gemeinden/swissBOUNDARIES3D_1_3_TLM_HOHEITSGEBIET.shp")
+muniShape <- sf::st_zm(muniShape, drop = TRUE, what = "ZM")
+kantone <- st_read("Y:/27_cadaster_canton_zurich/27_cadaster_canton_zurich/2_data/1_raw/Kanton/swissBOUNDARIES3D_1_5_TLM_KANTONSGEBIET.shp")
+zürich <- kantone[6,]
+Zürisee <- st_read("Y:/27_cadaster_canton_zurich/27_cadaster_canton_zurich/Zürichsee.shp")
+Zürisee <- st_transform(Zürisee, 2056)
+Griifesee <- st_read("Y:/27_cadaster_canton_zurich/27_cadaster_canton_zurich/Griifesee.shp")
+Griifesee <- st_transform(Griifesee, 2056)
+
+p <- ggplot() +
+  
+  geom_sf(data = merged_data_all$geometry, aes(fill = as.factor(merged_data_all$Weinmerkmal)), color = "red") +
+  
+  geom_sf(data = muniShape, fill = NA, colour = "grey", size = 0.05) +
+  
+  geom_sf(data = zürich, fill = NA, colour = "black", size = 0.5) +
+  
+  labs(title = "Estates with Grapes") +
+  
+  geom_sf(data = Zürisee, fill = "lightblue", lwd = 0) + #muss vor coord_sf sein (?)
+  coord_sf(crs = st_crs(2056)) +
+  geom_sf(data = Griifesee, fill = "lightblue", lwd = 0) +
+  coord_sf(crs = st_crs(2056)) +
+  
+  coord_sf(
+    xlim = c(2669087.36213217, 2713875.597690578),
+    ylim = c(1227293.256352458, 1276966.884853686),
+    expand = FALSE
+  ) +
+  
+  theme(legend.position = "none")
+p
+
+#Piwi Clusters with planting date ##############################################
+merged_data_all <- merged_data_all_original
+merged_data_all <- merged_data_all[!is.na(merged_data_all$year),]
+merged_data_all <- merged_data_all[!is.na(merged_data_all$Weinmerkmal),]
+merged_data_all <- merged_data_all[merged_data_all$Weinmerkmal == 1,]
+merged_data_all <- st_as_sf(merged_data_all)
+merged_data_all <- merged_data_all[!is.na(merged_data_all$BLW_NAME),]
+#delete one entry that isn't shown on the plot anyways
+merged_data_all <- merged_data_all[merged_data_all$plantation_year > 1969,]
+
+p <- ggplot() +
+  
+  geom_sf(
+    data = merged_data_all, size = 3,
+    aes(color = plantation_year)
+  ) +
+  
+  scale_color_viridis_c(name = "Planting date") +
+  
+  geom_sf(data = muniShape, fill = NA, colour = "grey", size = 0.05) +
+  
+  geom_sf(data = zürich, fill = NA, colour = "black", size = 1) +
+  
+  labs(title = "Distribution of PiWis across Zurich") +
+  
+  geom_sf(data = Zürisee, fill = "lightblue", lwd = 0) +
+  coord_sf(crs = st_crs(2056)) +
+  geom_sf(data = Griifesee, fill = "lightblue", lwd = 0) +
+  coord_sf(crs = st_crs(2056)) +
+  
+  coord_sf(
+    xlim = c(2669087.36213217, 2713875.597690578),
+    ylim = c(1227293.256352458, 1276966.884853686),
+    expand = FALSE 
+  )
+
+p
